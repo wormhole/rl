@@ -91,12 +91,13 @@ EPISODE = 100000
 EPISODE_STEP = 2000
 
 if __name__ == "__main__":
-    env = gym.make("Breakout-ram-v0")
+    env = gym.make("Breakout-ram-v4")
     N_ACTIONS = env.action_space.n  # 动作数量
     N_STATES = env.observation_space.shape[0]  # 环境信息维度
     dqn = DQN(N_STATES, N_ACTIONS, MEMORY_CAPACITY, TARGET_UPDATE_STEP, BATCH_SIZE, LR, EPSILON, GAMMA)
 
-    for episode in range(EPISODE):
+    e_reward = 0
+    for episode in range(1, EPISODE + 1):
         s = env.reset()
         s = s / 255
         total_reward = 0
@@ -116,4 +117,8 @@ if __name__ == "__main__":
             if done:
                 break
             s = s_
-        print("episode: ", episode, "Reward: ", round(total_reward, 2))
+        print("episode: ", episode, "Reward: ", total_reward)
+        e_reward += total_reward
+        if episode % 10 == 0:
+            print("total_reward/10: ", e_reward / 10)
+            e_reward = 0

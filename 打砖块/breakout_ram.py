@@ -8,16 +8,21 @@ import torch.nn.functional as F
 class Net(nn.Module):
     def __init__(self, n_states, n_actions):
         super(Net, self).__init__()
-        self.fc1 = nn.Linear(n_states, 256)
-        self.fc2 = nn.Linear(256, 128)
-        self.fc3 = nn.Linear(128, 64)
-        self.fc4 = nn.Linear(64, n_actions)
+        self.seq = nn.Sequential(
+            nn.Linear(n_states, 256),
+            nn.Dropout(0.2),
+            nn.ReLU(),
+            nn.Linear(256, 128),
+            nn.Dropout(0.2),
+            nn.ReLU(),
+            nn.Linear(128, 64),
+            nn.Dropout(0.2),
+            nn.ReLU(),
+            nn.Linear(64, n_actions)
+        )
 
     def forward(self, x):
-        x = self.fc1(x)
-        x = self.fc2(F.relu(x))
-        x = self.fc3(F.relu(x))
-        x = self.fc4(F.relu(x))
+        x = self.seq(x)
         return x
 
 
@@ -48,11 +53,11 @@ class DQN(object):
             action = np.random.randint(0, self.n_actions)
         return action
 
-    def store_transition(self, s, a, r, s_):
-        transition = np.hstack((s, [a, r], s_))
+    def store(self, s, a, r, s_):
+        mem = np.hstack((s, [a, r], s_))
         # 如果记忆库满了, 就覆盖老数据
         index = self.memory_counter % self.memory_capacity
-        self.memory[index, :] = transition
+        self.memory[index, :] = mem
         self.memory_counter += 1
 
     def learn(self):
@@ -82,13 +87,14 @@ class DQN(object):
 
 # 超参数
 BATCH_SIZE = 32
-LR = 0.001  # 学习率
+LR = 0.0001  # 学习率
 EPSILON = 0.9  # 最优选择动作百分比
-GAMMA = 0.95  # 奖励递减参数
+GAMMA = 0.99  # 奖励递减参数
 TARGET_UPDATE_STEP = 100  # Q 现实网络的更新频率
 MEMORY_CAPACITY = 10000  # 记忆库大小
 EPISODE = 100000
 EPISODE_STEP = 2000
+LEARN_START = 1000
 
 if __name__ == "__main__":
     env = gym.make("Breakout-ram-v4")
@@ -99,7 +105,7 @@ if __name__ == "__main__":
     e_reward = 0
     for episode in range(1, EPISODE + 1):
         s = env.reset()
-        s = s / 255
+        s = s / 255.0
         total_reward = 0
         for step in range(EPISODE_STEP):
             env.render()
@@ -107,11 +113,11 @@ if __name__ == "__main__":
 
             # 执行动作
             s_, r, done, info = env.step(a)
-            s_ = s_ / 255
-            dqn.store_transition(s, a, r, s_)
+            s_ = s_ / 255.0
+            dqn.store(s, a, r, s_)
 
             total_reward += r
-            if dqn.memory_counter > MEMORY_CAPACITY:
+            if dqn.memory_counter > LEARN_START:
                 dqn.learn()
 
             if done:

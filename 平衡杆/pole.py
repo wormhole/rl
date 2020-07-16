@@ -47,11 +47,11 @@ class DQN(object):
             action = np.random.randint(0, self.n_actions)
         return action
 
-    def store_transition(self, s, a, r, s_):
-        transition = np.hstack((s, [a, r], s_))
+    def store(self, s, a, r, s_):
+        mem = np.hstack((s, [a, r], s_))
         # 如果记忆库满了, 就覆盖老数据
         index = self.memory_counter % self.memory_capacity
-        self.memory[index, :] = transition
+        self.memory[index, :] = mem
         self.memory_counter += 1
 
     def learn(self):

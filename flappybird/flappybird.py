@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 import torch
 import torch.nn as nn
+from tensorboardX import SummaryWriter
 
 sys.path.append("game/")
 import wrapped_flappy_bird as game
@@ -16,7 +17,7 @@ ACTIONS = 2  # 动作数量
 GAMMA = 0.99  # 奖励折扣率
 OBSERVE = 1000  # 多少次后进行训练
 EXPLORE = 2000000  # 探索次数
-FINAL_EPSILON = 0.0001  # 最终epsilon
+FINAL_EPSILON = 0.00001  # 最终epsilon
 INITIAL_EPSILON = 0.1  # 初始epsilon
 REPLAY_MEMORY = 50000  # 记忆回放容量
 BATCH_SIZE = 32
@@ -26,6 +27,7 @@ width = 80
 height = 80
 LR = 1e-6  # 学习率
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+writer = SummaryWriter(log_dir="log", comment="dqn")
 
 
 def preprocess(observation):
@@ -118,7 +120,7 @@ class DQNAgent(object):
         y_batch = torch.Tensor(y_batch).to(device)
         y_predict = self.q_net(state_batch).gather(1, action_index_batch)
         loss = self.loss_func(y_predict, y_batch)
-
+        writer.add_scalar("loss", loss.item(), self.time_step)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -173,11 +175,11 @@ if __name__ == "__main__":
     agent = DQNAgent(actions)
     flappy_bird = game.GameState()
 
-    action0 = np.array([1, 0])
-    observation0, reward0, terminal = flappy_bird.frame_step(action0)
-    observation0 = preprocess(observation0)
+    action = np.array([1, 0])
+    observation, reward, terminal = flappy_bird.frame_step(action)
+    observation = preprocess(observation)
 
-    agent.init_state(observation0)
+    agent.init_state(observation)
 
     while True:
         action = agent.get_action()

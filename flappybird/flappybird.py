@@ -17,9 +17,9 @@ ACTIONS = 2  # 动作数量
 GAMMA = 0.99  # 奖励折扣率
 OBSERVE = 1000  # 多少次后进行训练
 EXPLORE = 2000000  # 探索次数
-FINAL_EPSILON = 0.0001  # 最终epsilon
-INITIAL_EPSILON = 0.1  # 初始epsilon
-REPLAY_MEMORY = 50000  # 记忆回放容量
+FINAL_EPSILON = 0.001  # 最终epsilon
+INITIAL_EPSILON = 0.5  # 初始epsilon
+REPLAY_MEMORY = 10000  # 记忆回放容量
 BATCH_SIZE = 32
 FRAME_PER_ACTION = 1
 UPDATE_TIME = 100  # 多少次后更新target_q_net
@@ -145,6 +145,7 @@ class DQNAgent(object):
             status = "train"
         print("TIME_STEP", self.time_step, "/ STATUS", status, "/ EPSILON", self.epsilon)
         self.state = _state
+        writer.add_scalar("reward", reward, self.time_step)
         self.time_step += 1
 
     def get_action(self):

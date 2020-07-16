@@ -59,7 +59,7 @@ class DQN(object):
             action = np.random.randint(0, self.n_actions)
         return action
 
-    def store_transition(self, s, a, r, s_):
+    def store(self, s, a, r, s_):
         # 如果记忆库满了, 就覆盖老数据
         index = self.memory_counter % self.memory_capacity
         self.memory_s[index] = s
@@ -105,6 +105,7 @@ TARGET_UPDATE_STEP = 100  # Q 现实网络的更新频率
 MEMORY_CAPACITY = 10000  # 记忆库大小
 EPISODE = 100000
 EPISODE_STEP = 2000
+LEARN_START = 1000
 
 if __name__ == "__main__":
     env = gym.make("Breakout-v4")
@@ -129,10 +130,10 @@ if __name__ == "__main__":
             s_ = s_[32:-14, 8:-8, 0, None]
             s_ = s_.transpose(2, 0, 1)
             s_[s_ > 0] = 1
-            dqn.store_transition(s, a, r, s_)
+            dqn.store(s, a, r, s_)
 
             total_reward += r
-            if dqn.memory_counter > MEMORY_CAPACITY:
+            if dqn.memory_counter > LEARN_START:
                 dqn.learn()
 
             if done:

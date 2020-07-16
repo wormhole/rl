@@ -2,7 +2,6 @@ import gym
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class Net(nn.Module):
@@ -37,7 +36,9 @@ class DQN(object):
         self.batch_size = batch_size
         self.gamma = gamma
 
-        self.eval_net, self.target_net = Net(n_states, n_actions), Net(n_states, n_actions)
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.eval_net, self.target_net = Net(n_states, n_actions).to(self.device), Net(n_states, n_actions).to(
+            self.device)
         self.learn_step_counter = 0  # 用于 target 更新计时
         self.memory_counter = 0  # 记忆库记数
         self.memory = np.zeros((memory_capacity, n_states * 2 + 2))  # 初始化记忆库
@@ -45,10 +46,10 @@ class DQN(object):
         self.loss_func = nn.MSELoss()  # 误差公式
 
     def choose_action(self, x):
-        x = torch.unsqueeze(torch.FloatTensor(x), 0)
+        x = torch.unsqueeze(torch.FloatTensor(x), 0).to(self.device)
         if np.random.uniform() < self.epsilon:  # 选最优动作
             actions_value = self.eval_net.forward(x)
-            action = torch.max(actions_value, 1)[1].data.numpy()[0]
+            action = torch.max(actions_value, 1)[1].cpu().numpy()[0]
         else:  # 选随机动作
             action = np.random.randint(0, self.n_actions)
         return action
@@ -69,10 +70,10 @@ class DQN(object):
         # 抽取记忆库中的批数据
         sample_index = np.random.choice(self.memory_capacity, self.batch_size)
         b_memory = self.memory[sample_index, :]
-        b_s = torch.FloatTensor(b_memory[:, :self.n_states])
-        b_a = torch.LongTensor(b_memory[:, self.n_states:self.n_states + 1].astype(int))
-        b_r = torch.FloatTensor(b_memory[:, self.n_states + 1:self.n_states + 2])
-        b_s_ = torch.FloatTensor(b_memory[:, -self.n_states:])
+        b_s = torch.FloatTensor(b_memory[:, :self.n_states]).to(self.device)
+        b_a = torch.LongTensor(b_memory[:, self.n_states:self.n_states + 1].astype(int)).to(self.device)
+        b_r = torch.FloatTensor(b_memory[:, self.n_states + 1:self.n_states + 2]).to(self.device)
+        b_s_ = torch.FloatTensor(b_memory[:, -self.n_states:]).to(self.device)
 
         # 针对做过的动作b_a, 来选 q_eval 的值, (q_eval 原本有所有动作的值)
         q_eval = self.eval_net(b_s).gather(1, b_a)

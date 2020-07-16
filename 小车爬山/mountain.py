@@ -30,6 +30,7 @@ class DQN(object):
         self.target_update_step = TARGET_UPDATE_STEP
         self.batch_size = batch_size
         self.gamma = gamma
+
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.eval_net, self.target_net = Net(n_states, n_actions).to(self.device), Net(n_states, n_actions).to(
             self.device)
@@ -84,21 +85,25 @@ class DQN(object):
 BATCH_SIZE = 32
 LR = 0.001  # 学习率
 EPSILON = 0.9  # 最优选择动作百分比
-GAMMA = 0.95  # 奖励递减参数
+GAMMA = 0.99  # 奖励递减参数
 TARGET_UPDATE_STEP = 100  # Q 现实网络的更新频率
 MEMORY_CAPACITY = 10000  # 记忆库大小
+EPISODE = 100000
+EPISODE_STEP = 2000
+LEARN_START = 1000
 
 if __name__ == "__main__":
-    env = gym.make("MountainCar-v0")  # 立杆子游戏
+    env = gym.make("MountainCar-v0")
     env = env.unwrapped
-    N_ACTIONS = env.action_space.n  # 杆子能做的动作
-    N_STATES = env.observation_space.shape[0]  # 杆子能获取的环境信息数
+    N_ACTIONS = env.action_space.n
+    N_STATES = env.observation_space.shape[0]
     dqn = DQN(N_STATES, N_ACTIONS, MEMORY_CAPACITY, TARGET_UPDATE_STEP, BATCH_SIZE, LR, EPSILON, GAMMA)
 
-    for epoch in range(5000):
+    e_reward = 0
+    for episode in range(1, EPISODE + 1):
         s = env.reset()
-        ep_r = 0
-        while True:
+        total_reward = 0
+        for step in range(EPISODE_STEP):
             env.render()
             a = dqn.choose_action(s)
 
@@ -112,13 +117,17 @@ if __name__ == "__main__":
             elif s_[0] <= -0.4:
                 r = -0.1
 
-            ep_r += r
+            dqn.store(s, a, r, s_)
 
-            dqn.store_transition(s, a, r, s_)
-            if dqn.memory_counter > MEMORY_CAPACITY:
+            total_reward += r
+            if dqn.memory_counter > LEARN_START:
                 dqn.learn()
 
             if done:
-                print("【Epoch】: ", epoch, "【Reward】: ", round(ep_r, 2))
                 break
             s = s_
+        print("episode: ", episode, "Reward: ", total_reward)
+        e_reward += total_reward
+        if episode % 10 == 0:
+            print("total_reward/10: ", e_reward / 10)
+            e_reward = 0

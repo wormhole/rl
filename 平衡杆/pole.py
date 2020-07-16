@@ -83,7 +83,7 @@ class DQN(object):
 BATCH_SIZE = 32
 LR = 0.001  # 学习率
 EPSILON = 0.9  # 最优选择动作百分比
-GAMMA = 0.95  # 奖励递减参数
+GAMMA = 0.99  # 奖励递减参数
 TARGET_UPDATE_STEP = 100  # Q 现实网络的更新频率
 MEMORY_CAPACITY = 10000  # 记忆库大小
 EPISODE = 100000

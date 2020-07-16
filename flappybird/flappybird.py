@@ -17,7 +17,7 @@ ACTIONS = 2  # 动作数量
 GAMMA = 0.99  # 奖励折扣率
 OBSERVE = 1000  # 多少次后进行训练
 EXPLORE = 2000000  # 探索次数
-FINAL_EPSILON = 0.00001  # 最终epsilon
+FINAL_EPSILON = 0.0001  # 最终epsilon
 INITIAL_EPSILON = 0.1  # 初始epsilon
 REPLAY_MEMORY = 50000  # 记忆回放容量
 BATCH_SIZE = 32
@@ -137,7 +137,6 @@ class DQNAgent(object):
         if self.time_step > OBSERVE:
             self.train()
 
-        status = ""
         if self.time_step <= OBSERVE:
             status = "observe"
         elif self.time_step > OBSERVE and self.time_step <= OBSERVE + EXPLORE:

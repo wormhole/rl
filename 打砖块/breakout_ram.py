@@ -26,13 +26,13 @@ class Net(nn.Module):
 
 
 class DQN(object):
-    def __init__(self, n_states, n_actions, memory_capacity, TARGET_UPDATE_STEP, batch_size, lr, epsilon, gamma):
+    def __init__(self, n_states, n_actions, memory_capacity, target_update_step, batch_size, lr, epsilon, gamma):
         self.epsilon = epsilon
         self.lr = lr
         self.n_states = n_states
         self.n_actions = n_actions
         self.memory_capacity = memory_capacity
-        self.target_update_step = TARGET_UPDATE_STEP
+        self.target_update_step = target_update_step
         self.batch_size = batch_size
         self.gamma = gamma
 

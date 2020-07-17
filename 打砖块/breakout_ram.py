@@ -1,3 +1,5 @@
+import os
+
 import gym
 import numpy as np
 import torch
@@ -48,6 +50,14 @@ class DQN(object):
         self.memory = np.zeros((memory_capacity, n_states * 2 + 2))  # 初始化记忆库
         self.optimizer = torch.optim.Adam(self.eval_net.parameters(), lr=lr)  # torch 的优化器
         self.loss_func = nn.MSELoss()  # 误差公式
+
+    def save(self):
+        torch.save(self.eval_net.state_dict(), "params.pth")
+
+    def load(self):
+        if os.path.exists("params.pth"):
+            self.eval_net.load_state_dict(torch.load("params.pth"))
+            self.target_net.load_state_dict(torch.load("params.pth"))
 
     def choose_action(self, x):
         x = torch.unsqueeze(torch.FloatTensor(x), 0).to(self.device)
@@ -128,6 +138,7 @@ if __name__ == "__main__":
             if done:
                 break
             s = s_
+        dqn.save()
         print("episode: ", episode, "Reward: ", total_reward)
         e_reward += total_reward
         if episode % 10 == 0:

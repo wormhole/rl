@@ -7,21 +7,25 @@ import torch.nn as nn
 class Net(nn.Module):
     def __init__(self, n_states, n_actions):
         super(Net, self).__init__()
-        self.seq = nn.Sequential(
+        self.fc1 = nn.Sequential(
             nn.Linear(n_states, 256),
-            nn.Dropout(0.2),
-            nn.ReLU(),
-            nn.Linear(256, 128),
-            nn.Dropout(0.2),
-            nn.ReLU(),
-            nn.Linear(128, 64),
-            nn.Dropout(0.2),
-            nn.ReLU(),
-            nn.Linear(64, n_actions)
+            nn.ReLU()
         )
+        self.fc2 = nn.Sequential(
+            nn.Linear(256, 128),
+            nn.ReLU()
+        )
+        self.fc3 = nn.Sequential(
+            nn.Linear(128, 64),
+            nn.ReLU()
+        )
+        self.fc4 = nn.Linear(64, n_actions)
 
     def forward(self, x):
-        x = self.seq(x)
+        x = self.fc1(x)
+        x = self.fc2(x)
+        x = self.fc3(x)
+        x = self.fc4(x)
         return x
 
 

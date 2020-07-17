@@ -84,8 +84,8 @@ class DQNAgent(object):
 
     def load(self):
         if os.path.exists("params3.pth"):
-            self.q_net.load_state_dict(torch.load("params3.pth")).to(device)
-            self.target_q_net.load_state_dict(torch.load("params3.pth")).to(device)
+            self.q_net.load_state_dict(torch.load("params3.pth"))
+            self.target_q_net.load_state_dict(torch.load("params3.pth"))
 
     def train(self):
         batch = random.sample(self.replay_memory, BATCH_SIZE)
@@ -143,7 +143,7 @@ class DQNAgent(object):
             status = "explore"
         else:
             status = "train"
-        print("TIME_STEP", self.time_step, "/ STATUS", status, "/ EPSILON", self.epsilon)
+        print("TIME_STEP", self.time_step, "/ STATUS", status, "/ ACTION", action, "/ EPSILON", self.epsilon)
         self.state = _state
         writer.add_scalar("reward", reward, self.time_step)
         self.time_step += 1

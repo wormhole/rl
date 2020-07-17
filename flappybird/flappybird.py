@@ -109,9 +109,6 @@ class DQNAgent(object):
             if terminal:
                 y_batch[i][0] = reward_batch[i]
             else:
-                # 这里的q_value_batch[i]为数组，大小为所有动作集合大小，q_value_batch[i],代表
-                # 做所有动作的Q值数组，y计算为如果游戏停止，y=reward[i],如果没停止，则y=reward[i]+gamma*np.max(q_value[i])
-                # 代表当前y值为当前reward+未来预期最大值*gamma(gamma:经验系数)
                 y_batch[i][0] = reward_batch[i] + GAMMA * np.max(q_value_batch[i])
 
         y_batch = np.array(y_batch)

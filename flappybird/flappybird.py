@@ -77,12 +77,12 @@ class DQNAgent(object):
         self.optimizer = torch.optim.Adam(self.q_net.parameters(), lr=LR)
 
     def save(self):
-        torch.save(self.q_net.state_dict(), "params3.pth")
+        torch.save(self.q_net.state_dict(), "params.pth")
 
     def load(self):
-        if os.path.exists("params3.pth"):
-            self.q_net.load_state_dict(torch.load("params3.pth"))
-            self.target_q_net.load_state_dict(torch.load("params3.pth"))
+        if os.path.exists("params.pth"):
+            self.q_net.load_state_dict(torch.load("params.pth"))
+            self.target_q_net.load_state_dict(torch.load("params.pth"))
 
     def train(self):
         batch = random.sample(self.replay_memory, BATCH_SIZE)

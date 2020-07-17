@@ -12,7 +12,6 @@ from tensorboardX import SummaryWriter
 sys.path.append("game/")
 import wrapped_flappy_bird as game
 
-GAME = "bird"  # 游戏名
 ACTIONS = 2  # 动作数量
 GAMMA = 0.99  # 奖励折扣率
 OBSERVE = 1000  # 多少次后进行训练
@@ -23,8 +22,6 @@ REPLAY_MEMORY = 10000  # 记忆回放容量
 BATCH_SIZE = 32
 FRAME_PER_ACTION = 1
 UPDATE_TIME = 100  # 多少次后更新target_q_net
-width = 80
-height = 80
 LR = 1e-6  # 学习率
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 writer = SummaryWriter(log_dir="log", comment="dqn")
@@ -168,8 +165,7 @@ class DQNAgent(object):
 
 
 if __name__ == "__main__":
-    actions = 2
-    agent = DQNAgent(actions)
+    agent = DQNAgent(ACTIONS)
     flappy_bird = game.GameState()
 
     action = np.array([1, 0])

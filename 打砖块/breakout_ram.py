@@ -52,6 +52,7 @@ class DQNAgent(object):
         self.n_actions = n_actions
         self.time_step = 0
         self.replay_memory = deque()
+        self.epsilon = epsilon
 
         self.q_net = QNet(n_states, n_actions).to(device)
         self.target_q_net = QNet(n_states, n_actions).to(device)
@@ -68,7 +69,7 @@ class DQNAgent(object):
             self.target_q_net.load_state_dict(torch.load("params.pth"))
 
     def choose_action(self, state):
-        if epsilon == 1 or np.random.uniform() > epsilon:
+        if self.epsilon == 1 or np.random.uniform() > self.epsilon:
             state = torch.FloatTensor([state]).to(device)
             q_value = self.q_net.forward(state)
             action = torch.max(q_value, 1)[1].cpu().numpy()[0]
@@ -139,6 +140,7 @@ def train(env, agent):
 
 def test(env, agent):
     agent.load()
+    agent.epsilon = 1
     total_reward = 0
     for ep in range(1, episode + 1):
         state = env.reset()
@@ -167,4 +169,5 @@ if __name__ == "__main__":
     n_actions = env.action_space.n
     n_states = env.observation_space.shape[0]
     agent = DQNAgent(n_states, n_actions)
-    train(env, agent)
+    # train(env, agent)
+    test(env, agent)

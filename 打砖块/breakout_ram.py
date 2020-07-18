@@ -11,12 +11,11 @@ import torch.nn as nn
 # 超参数
 batch_size = 32
 lr = 0.0001
-init_epsilon = 0.1
-final_epsilon = 0.001
+epsilon = 0.1
 gamma = 0.99
 target_update_step = 100
 memory_capacity = 10000
-episode = 50000
+episode = 20000
 episode_step = 2000
 observe = 1000
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -52,7 +51,6 @@ class DQNAgent(object):
         self.n_states = n_states
         self.n_actions = n_actions
         self.time_step = 0
-        self.epsilon = init_epsilon
         self.replay_memory = deque()
 
         self.q_net = QNet(n_states, n_actions).to(device)
@@ -71,14 +69,11 @@ class DQNAgent(object):
 
     def choose_action(self, state):
         state = torch.FloatTensor([state]).to(device)
-        if np.random.uniform() > self.epsilon:
+        if np.random.uniform() > epsilon:
             q_value = self.q_net.forward(state)
             action = torch.max(q_value, 1)[1].cpu().numpy()[0]
         else:
             action = np.random.randint(0, self.n_actions)
-
-        if self.epsilon != 1 and self.epsilon > final_epsilon and self.time_step <= observe + episode:
-            self.epsilon -= (init_epsilon - final_epsilon) / episode
         return action
 
     def store(self, state, action, reward, _state, done):
@@ -87,10 +82,10 @@ class DQNAgent(object):
             self.replay_memory.popleft()
 
         if self.time_step > observe:
-            self.train()
+            self.learn()
         self.time_step += 1
 
-    def train(self):
+    def learn(self):
         batch = random.sample(self.replay_memory, batch_size)
         state_batch = [data[0] for data in batch]
         action_batch = [data[1] for data in batch]
@@ -132,7 +127,6 @@ def train(env, agent):
             env.render()
             action = agent.choose_action(state)
 
-            # 执行动作
             _state, reward, done, info = env.step(action)
             _state = _state / 255.0
             agent.store(state, action, reward, _state, done)
@@ -141,7 +135,7 @@ def train(env, agent):
             if done:
                 break
             state = _state
-        print("episode: ", ep, "reward: ", ep_reward, "epsilon: ", agent.epsilon)
+        print("episode: ", ep, "reward: ", ep_reward)
         total_reward += ep_reward
         if ep % 100 == 0:
             print("av_reward(100): ", total_reward / 100)
@@ -150,7 +144,6 @@ def train(env, agent):
 
 def test(env, agent):
     agent.load()
-    agent.epsilon = 1
     total_reward = 0
     for ep in range(1, episode + 1):
         state = env.reset()
@@ -161,7 +154,6 @@ def test(env, agent):
             env.render()
             action = agent.choose_action(state)
 
-            # 执行动作
             _state, reward, done, info = env.step(action)
 
             ep_reward += reward
@@ -177,7 +169,7 @@ def test(env, agent):
 
 if __name__ == "__main__":
     env = gym.make("Breakout-ram-v4")
-    n_actions = env.action_space.n  # 动作数量
-    n_states = env.observation_space.shape[0]  # 环境信息维度
+    n_actions = env.action_space.n
+    n_states = env.observation_space.shape[0]
     agent = DQNAgent(n_states, n_actions)
     train(env, agent)

@@ -70,7 +70,7 @@ class DQNAgent(object):
 
         self.q_net = QNet(n_actions).to(device)
         self.target_q_net = QNet(n_actions).to(device)
-        # writer.add_graph(self.q_net, (torch.randn(32, 4, 80, 80),))
+        writer.add_graph(self.q_net, (torch.randn(32, 4, 80, 80).to(device),))
 
         self.optimizer = torch.optim.Adam(self.q_net.parameters(), lr=lr)
         self.loss_func = nn.MSELoss()

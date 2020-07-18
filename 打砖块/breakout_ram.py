@@ -137,8 +137,8 @@ def train(env, agent):
             state = _state
         print("episode: ", ep, "reward: ", ep_reward)
         total_reward += ep_reward
-        if ep % 100 == 0:
-            print("av_reward(100): ", total_reward / 100)
+        if ep % 10 == 0:
+            print("av_reward(10): ", total_reward / 10)
             total_reward = 0
 
 
@@ -162,8 +162,8 @@ def test(env, agent):
             state = _state
         print("episode: ", ep, "reward: ", ep_reward)
         total_reward += ep_reward
-        if ep % 100 == 0:
-            print("av_reward(100): ", total_reward / 100)
+        if ep % 10 == 0:
+            print("av_reward(10): ", total_reward / 10)
             total_reward = 0
 
 
@@ -172,4 +172,4 @@ if __name__ == "__main__":
     n_actions = env.action_space.n
     n_states = env.observation_space.shape[0]
     agent = DQNAgent(n_states, n_actions)
-    train(env, agent)
+    test(env, agent)

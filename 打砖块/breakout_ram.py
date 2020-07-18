@@ -68,8 +68,8 @@ class DQNAgent(object):
             self.target_q_net.load_state_dict(torch.load("params.pth"))
 
     def choose_action(self, state):
-        state = torch.FloatTensor([state]).to(device)
         if np.random.uniform() > epsilon:
+            state = torch.FloatTensor([state]).to(device)
             q_value = self.q_net.forward(state)
             action = torch.max(q_value, 1)[1].cpu().numpy()[0]
         else:
@@ -172,4 +172,4 @@ if __name__ == "__main__":
     n_actions = env.action_space.n
     n_states = env.observation_space.shape[0]
     agent = DQNAgent(n_states, n_actions)
-    test(env, agent)
+    train(env, agent)

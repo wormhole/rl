@@ -10,7 +10,7 @@ import torch.nn as nn
 
 # 超参数
 batch_size = 32
-lr = 0.0001
+lr = 1e-6
 epsilon = 0.1
 gamma = 0.99
 target_update_step = 100
@@ -48,7 +48,6 @@ class QNet(nn.Module):
 
 class DQNAgent(object):
     def __init__(self, n_states, n_actions):
-        self.n_states = n_states
         self.n_actions = n_actions
         self.time_step = 0
         self.replay_memory = deque()
@@ -61,12 +60,12 @@ class DQNAgent(object):
         self.loss_func = nn.MSELoss()
 
     def save(self):
-        torch.save(self.q_net.state_dict(), "params.pth")
+        torch.save(self.q_net.state_dict(), "params_ram.pth")
 
     def load(self):
-        if os.path.exists("params.pth"):
-            self.q_net.load_state_dict(torch.load("params.pth"))
-            self.target_q_net.load_state_dict(torch.load("params.pth"))
+        if os.path.exists("params_ram.pth"):
+            self.q_net.load_state_dict(torch.load("params_ram.pth"))
+            self.target_q_net.load_state_dict(torch.load("params_ram.pth"))
 
     def choose_action(self, state):
         if self.epsilon == 1 or np.random.uniform() > self.epsilon:

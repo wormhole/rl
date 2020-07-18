@@ -115,10 +115,15 @@ class DQNAgent(object):
 
 def train(env, agent):
     total_reward = 0
+
     for ep in range(1, episode + 1):
-        state = env.reset()
-        state = state / 255.0
+        env.reset()
         ep_reward = 0
+
+        state, reward, done, info = env.step(1)
+        state = state / 255.0
+        alive = info["ale.lives"]
+
         for step in range(episode_step):
             env.render()
             action = agent.choose_action(state)
@@ -128,9 +133,15 @@ def train(env, agent):
             agent.store(state, action, reward, _state)
 
             ep_reward += reward
+
             if done:
                 break
+            elif alive != info["ale.lives"]:
+                _state, reward, done, info = env.step(1)
+                _state = _state / 255.0
+                alive = info["ale.lives"]
             state = _state
+
         print("episode: ", ep, "reward: ", ep_reward)
         total_reward += ep_reward
         if ep % 10 == 0:
@@ -142,10 +153,15 @@ def test(env, agent):
     agent.load()
     agent.epsilon = 1
     total_reward = 0
+
     for ep in range(1, episode + 1):
-        state = env.reset()
-        state = state / 255.0
+        env.reset()
         ep_reward = 0
+
+        state, reward, done, info = env.step(1)
+        state = state / 255.0
+        alive = info["ale.lives"]
+
         for step in range(episode_step):
             time.sleep(0.05)
             env.render()
@@ -155,9 +171,15 @@ def test(env, agent):
             _state = _state / 255.0
 
             ep_reward += reward
+
             if done:
                 break
+            elif alive != info["ale.lives"]:
+                _state, reward, done, info = env.step(1)
+                _state = _state / 255.0
+                alive = info["ale.lives"]
             state = _state
+
         print("episode: ", ep, "reward: ", ep_reward)
         total_reward += ep_reward
         if ep % 10 == 0:

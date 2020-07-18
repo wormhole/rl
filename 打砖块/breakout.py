@@ -8,6 +8,7 @@ import gym
 import numpy as np
 import torch
 import torch.nn as nn
+from tensorboardX import SummaryWriter
 
 # 超参数
 batch_size = 32
@@ -20,6 +21,7 @@ episode = 20000
 episode_step = 2000
 observe = 1000
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+writer = SummaryWriter(log_dir="log", comment="dqn")
 
 
 def preprocess(state):
@@ -68,6 +70,7 @@ class DQNAgent(object):
 
         self.q_net = QNet(n_actions).to(device)
         self.target_q_net = QNet(n_actions).to(device)
+        # writer.add_graph(self.q_net, (torch.randn(32, 4, 80, 80),))
 
         self.optimizer = torch.optim.Adam(self.q_net.parameters(), lr=lr)
         self.loss_func = nn.MSELoss()
@@ -116,6 +119,7 @@ class DQNAgent(object):
         target_q_value = reward_batch + gamma * target_q_value
 
         loss = self.loss_func(q_value, target_q_value)
+        writer.add_scalar("loss", loss.item(), self.time_step)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()

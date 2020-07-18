@@ -68,7 +68,7 @@ class DQNAgent(object):
             self.target_q_net.load_state_dict(torch.load("params.pth"))
 
     def choose_action(self, state):
-        if np.random.uniform() > epsilon:
+        if epsilon == 1 or np.random.uniform() > epsilon:
             state = torch.FloatTensor([state]).to(device)
             q_value = self.q_net.forward(state)
             action = torch.max(q_value, 1)[1].cpu().numpy()[0]
@@ -77,13 +77,13 @@ class DQNAgent(object):
         return action
 
     def store(self, state, action, reward, _state, done):
+        self.time_step += 1
         self.replay_memory.append((state, action, reward, _state, done))
         if len(self.replay_memory) > memory_capacity:
             self.replay_memory.popleft()
 
         if self.time_step > observe:
             self.learn()
-        self.time_step += 1
 
     def learn(self):
         batch = random.sample(self.replay_memory, batch_size)

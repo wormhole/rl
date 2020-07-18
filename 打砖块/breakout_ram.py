@@ -76,9 +76,9 @@ class DQNAgent(object):
             action = np.random.randint(0, self.n_actions)
         return action
 
-    def store(self, state, action, reward, _state, done):
+    def store(self, state, action, reward, _state):
         self.time_step += 1
-        self.replay_memory.append((state, action, reward, _state, done))
+        self.replay_memory.append((state, action, reward, _state))
         if len(self.replay_memory) > memory_capacity:
             self.replay_memory.popleft()
 
@@ -91,7 +91,6 @@ class DQNAgent(object):
         action_batch = [data[1] for data in batch]
         reward_batch = [data[2] for data in batch]
         _state_batch = [data[3] for data in batch]
-        done_batch = [data[4] for data in batch]
 
         state_batch = torch.FloatTensor(state_batch).to(device)
         action_batch = torch.LongTensor(action_batch).view(batch_size, 1).to(device)
@@ -101,11 +100,7 @@ class DQNAgent(object):
         q_value = self.q_net(state_batch).gather(1, action_batch)
         target_q_value = self.target_q_net(_state_batch).detach()
         target_q_value = target_q_value.max(1)[0].view(batch_size, 1)
-        for i in range(batch_size):
-            if done_batch[i]:
-                target_q_value[i][0] = reward_batch[i]
-            else:
-                target_q_value[i][0] = reward_batch[i] + gamma * target_q_value[i][0]
+        target_q_value = reward_batch + gamma * target_q_value
 
         loss = self.loss_func(q_value, target_q_value)
         self.optimizer.zero_grad()
@@ -129,7 +124,7 @@ def train(env, agent):
 
             _state, reward, done, info = env.step(action)
             _state = _state / 255.0
-            agent.store(state, action, reward, _state, done)
+            agent.store(state, action, reward, _state)
 
             ep_reward += reward
             if done:

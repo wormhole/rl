@@ -85,7 +85,7 @@ class DQNAgent(object):
 
     def choose_action(self, state):
         if self.epsilon == 1 or np.random.uniform() > self.epsilon:
-            state = torch.FloatTensor([state]).to(device)
+            state = torch.Tensor([state]).to(device)
             q_value = self.q_net.forward(state)
             action = torch.max(q_value, 1)[1].cpu().numpy()[0]
         else:
@@ -108,10 +108,10 @@ class DQNAgent(object):
         reward_batch = [data[2] for data in batch]
         _state_batch = [data[3] for data in batch]
 
-        state_batch = torch.FloatTensor(state_batch).to(device)
+        state_batch = torch.Tensor(state_batch).to(device)
         action_batch = torch.LongTensor(action_batch).view(batch_size, 1).to(device)
-        reward_batch = torch.FloatTensor(reward_batch).view(batch_size, 1).to(device)
-        _state_batch = torch.FloatTensor(_state_batch).to(device)
+        reward_batch = torch.Tensor(reward_batch).view(batch_size, 1).to(device)
+        _state_batch = torch.Tensor(_state_batch).to(device)
 
         q_value = self.q_net(state_batch).gather(1, action_batch)
         target_q_value = self.target_q_net(_state_batch).detach()

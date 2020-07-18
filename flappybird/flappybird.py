@@ -12,17 +12,17 @@ from tensorboardX import SummaryWriter
 sys.path.append("game/")
 import wrapped_flappy_bird as game
 
-ACTIONS = 2  # 动作数量
-GAMMA = 0.99  # 奖励折扣率
-OBSERVE = 1000  # 多少次后进行训练
-EXPLORE = 2000000  # 探索次数
-FINAL_EPSILON = 0.001  # 最终epsilon
-INITIAL_EPSILON = 0.5  # 初始epsilon
-REPLAY_MEMORY = 10000  # 记忆回放容量
-BATCH_SIZE = 32
-FRAME_PER_ACTION = 1
-UPDATE_TIME = 100  # 多少次后更新target_q_net
-LR = 1e-6  # 学习率
+actions = 2
+gamma = 0.99
+observe = 1000
+episode = 2000000
+final_epsilon = 0.001
+initial_epsilon = 0.4
+memory_capacity = 10000
+batch_size = 32
+frame_per_action = 4
+target_update_step = 100
+lr = 1e-6
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 writer = SummaryWriter(log_dir="log", comment="dqn")
 
@@ -33,9 +33,9 @@ def preprocess(observation):
     return np.reshape(observation, (80, 80))
 
 
-class DeepNetWork(nn.Module):
+class QNet(nn.Module):
     def __init__(self, ):
-        super(DeepNetWork, self).__init__()
+        super(QNet, self).__init__()
         self.conv1 = nn.Sequential(
             nn.Conv2d(in_channels=4, out_channels=32, kernel_size=8, stride=4, padding=2),
             nn.ReLU(inplace=True),
@@ -65,16 +65,14 @@ class DeepNetWork(nn.Module):
 
 
 class DQNAgent(object):
-    def __init__(self, actions):
+    def __init__(self):
         self.replay_memory = deque()
         self.time_step = 0
-        self.epsilon = INITIAL_EPSILON
-        self.actions = actions
-        self.q_net = DeepNetWork().to(device)
-        self.target_q_net = DeepNetWork().to(device)
-        self.load()
+        self.epsilon = initial_epsilon
+        self.q_net = QNet().to(device)
+        self.target_q_net = QNet().to(device)
         self.loss_func = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.q_net.parameters(), lr=LR)
+        self.optimizer = torch.optim.Adam(self.q_net.parameters(), lr=lr)
 
     def save(self):
         torch.save(self.q_net.state_dict(), "params.pth")
@@ -84,8 +82,8 @@ class DQNAgent(object):
             self.q_net.load_state_dict(torch.load("params.pth"))
             self.target_q_net.load_state_dict(torch.load("params.pth"))
 
-    def train(self):
-        batch = random.sample(self.replay_memory, BATCH_SIZE)
+    def learn(self):
+        batch = random.sample(self.replay_memory, batch_size)
         state_batch = [data[0] for data in batch]
         action_batch = [data[1] for data in batch]
         reward_batch = [data[2] for data in batch]
@@ -95,21 +93,20 @@ class DQNAgent(object):
         _state_batch = torch.Tensor(_state_batch).to(device)
         action_batch = np.array(action_batch)
         index = action_batch.argmax(axis=1)
-        index = np.reshape(index, [BATCH_SIZE, 1])
+        index = np.reshape(index, [batch_size, 1])
         action_index_batch = torch.LongTensor(index).to(device)
-        q_value_batch = self.target_q_net(_state_batch)
-        q_value_batch = q_value_batch.detach().cpu().numpy()
+        target_q_value = self.target_q_net(_state_batch)
+        target_q_value = target_q_value.detach().cpu().numpy()
 
-        y_batch = np.zeros([BATCH_SIZE, 1])
-        for i in range(0, BATCH_SIZE):
-            terminal = batch[i][4]
-            if terminal:
+        y_batch = np.zeros([batch_size, 1])
+        for i in range(0, batch_size):
+            if batch[i][4]:
                 y_batch[i][0] = reward_batch[i]
             else:
-                y_batch[i][0] = reward_batch[i] + GAMMA * np.max(q_value_batch[i])
+                y_batch[i][0] = reward_batch[i] + gamma * np.max(target_q_value[i])
 
         y_batch = np.array(y_batch)
-        y_batch = np.reshape(y_batch, [BATCH_SIZE, 1])
+        y_batch = np.reshape(y_batch, [batch_size, 1])
         state_batch = torch.Tensor(state_batch).to(device)
         y_batch = torch.Tensor(y_batch).to(device)
         y_predict = self.q_net(state_batch).gather(1, action_index_batch)
@@ -119,63 +116,89 @@ class DQNAgent(object):
         loss.backward()
         self.optimizer.step()
 
-        if self.time_step % UPDATE_TIME == 0:
+        if self.time_step % target_update_step == 0:
             self.target_q_net.load_state_dict(self.q_net.state_dict())
             self.save()
 
-    def set_perception(self, next_observation, action, reward, terminal):
-        _state = np.append(self.state[1:, :, :], np.expand_dims(next_observation, axis=0), axis=0)
-        self.replay_memory.append((self.state, action, reward, _state, terminal))
-        if len(self.replay_memory) > REPLAY_MEMORY:
-            self.replay_memory.popleft()
-        if self.time_step > OBSERVE:
-            self.train()
-
-        if self.time_step <= OBSERVE:
-            status = "observe"
-        elif self.time_step > OBSERVE and self.time_step <= OBSERVE + EXPLORE:
-            status = "explore"
-        else:
-            status = "train"
-        print("TIME_STEP", self.time_step, "/ STATUS", status, "/ ACTION", action, "/ EPSILON", self.epsilon)
-        self.state = _state
-        writer.add_scalar("reward", reward, self.time_step)
+    def store(self, state, action, reward, _state, terminal):
         self.time_step += 1
+        self.replay_memory.append((state, action, reward, _state, terminal))
+        if len(self.replay_memory) > memory_capacity:
+            self.replay_memory.popleft()
+        if self.time_step > observe:
+            self.learn()
+        writer.add_scalar("reward", reward, self.time_step)
 
-    def get_action(self):
-        current_state = torch.Tensor(self.state).unsqueeze(dim=0).to(device)
-        q_value = self.q_net(current_state)[0]
-        action = np.zeros(self.actions)
-        if self.time_step % FRAME_PER_ACTION == 0:
-            if random.random() <= self.epsilon:
-                action_index = random.randrange(self.actions)
+    def choose_action(self, state):
+        if self.epsilon != 1 and self.epsilon > final_epsilon and self.time_step > observe and (
+                self.time_step - observe) % 1000 == 0:
+            self.epsilon -= (initial_epsilon - final_epsilon) * 1000 / episode
+
+        action = np.zeros(actions)
+        if self.time_step % frame_per_action == 0:
+            if self.epsilon != 1 and random.random() <= self.epsilon:
+                action_index = random.randrange(actions)
                 action[action_index] = 1
             else:
-                action_index = np.argmax(q_value.detach().cpu().numpy())
+                state = torch.Tensor([state]).to(device)
+                q_value = self.q_net(state)
+                action_index = q_value.detach().cpu().max(1)[1].item()
                 action[action_index] = 1
         else:
             action[0] = 1
-
-        if self.epsilon > FINAL_EPSILON and self.time_step > OBSERVE:
-            self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
         return action
 
-    def init_state(self, observation):
-        self.state = np.stack((observation, observation, observation, observation), axis=0)
+
+def train(env, agent):
+    total_reward = 0
+    action = np.array([1, 0])
+    state, reward, terminal = env.frame_step(action)
+    state = preprocess(state)
+    state = np.stack((state, state, state, state), axis=0)
+
+    while True:
+        action = agent.choose_action(state)
+        _state, reward, terminal = env.frame_step(action)
+        _state = preprocess(_state)
+        _state = np.append(state[1:, :, :], np.expand_dims(_state, axis=0), axis=0)
+        agent.store(state, action, reward, _state, terminal)
+        total_reward += reward
+        if terminal:
+            print("step: ", agent.time_step, "reward: ", total_reward, "epsilon: ", agent.epsilon)
+            total_reward = 0
+            action = np.array([1, 0])
+            _state, reward, terminal = env.frame_step(action)
+            _state = preprocess(_state)
+            _state = np.stack((_state, _state, _state, _state), axis=0)
+        state = _state
+
+
+def test(env, agent):
+    agent.load()
+    agent.epsilon = 1
+    total_reward = 0
+    action = np.array([1, 0])
+    state, reward, terminal = env.frame_step(action)
+    state = preprocess(state)
+    state = np.stack((state, state, state, state), axis=0)
+
+    while True:
+        action = agent.choose_action(state)
+        _state, reward, terminal = env.frame_step(action)
+        _state = preprocess(_state)
+        _state = np.append(state[1:, :, :], np.expand_dims(_state, axis=0), axis=0)
+        total_reward += reward
+        if terminal:
+            print("step: ", agent.time_step, "reward: ", total_reward, "epsilon: ", agent.epsilon)
+            total_reward = 0
+            action = np.array([1, 0])
+            _state, reward, terminal = env.frame_step(action)
+            _state = preprocess(_state)
+            _state = np.stack((_state, _state, _state, _state), axis=0)
+        state = _state
 
 
 if __name__ == "__main__":
-    agent = DQNAgent(ACTIONS)
+    agent = DQNAgent()
     flappy_bird = game.GameState()
-
-    action = np.array([1, 0])
-    observation, reward, terminal = flappy_bird.frame_step(action)
-    observation = preprocess(observation)
-
-    agent.init_state(observation)
-
-    while True:
-        action = agent.get_action()
-        next_observation, reward, terminal = flappy_bird.frame_step(action)
-        next_observation = preprocess(next_observation)
-        agent.set_perception(next_observation, action, reward, terminal)
+    train(flappy_bird, agent)

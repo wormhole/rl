@@ -152,6 +152,7 @@ def test(env, agent):
             action = agent.choose_action(state)
 
             _state, reward, done, info = env.step(action)
+            _state = _state / 255.0
 
             ep_reward += reward
             if done:

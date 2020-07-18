@@ -192,5 +192,5 @@ if __name__ == "__main__":
     n_actions = env.action_space.n
     n_states = env.observation_space.shape[0]
     agent = DQNAgent(n_states, n_actions)
-    # train(env, agent)
-    test(env, agent)
+    train(env, agent)
+    # test(env, agent)

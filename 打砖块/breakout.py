@@ -141,7 +141,7 @@ def train(env, agent):
         state = preprocess(state)
         state = np.stack((state, state, state, state), axis=0)
 
-        for step in range(episode_step):
+        while not done:
             env.render()
             action = agent.choose_action(state)
 
@@ -152,9 +152,7 @@ def train(env, agent):
 
             ep_reward += reward
 
-            if done:
-                break
-            elif alive != info["ale.lives"]:
+            if alive != info["ale.lives"]:
                 _state, reward, done, info = env.step(1)
                 alive = info["ale.lives"]
                 _state = preprocess(_state)
@@ -182,7 +180,7 @@ def test(env, agent):
         state = preprocess(state)
         state = np.stack((state, state, state, state), axis=0)
 
-        for step in range(episode_step):
+        while not done:
             time.sleep(0.05)
             env.render()
             action = agent.choose_action(state)
@@ -193,9 +191,7 @@ def test(env, agent):
 
             ep_reward += reward
 
-            if done:
-                break
-            elif alive != info["ale.lives"]:
+            if alive != info["ale.lives"]:
                 _state, reward, done, info = env.step(1)
                 alive = info["ale.lives"]
                 _state = preprocess(_state)

@@ -123,7 +123,7 @@ def train(env, agent):
         state = state / 255.0
         alive = info["ale.lives"]
 
-        for step in range(episode_step):
+        while not done:
             env.render()
             action = agent.choose_action(state)
 
@@ -133,9 +133,7 @@ def train(env, agent):
 
             ep_reward += reward
 
-            if done:
-                break
-            elif alive != info["ale.lives"]:
+            if alive != info["ale.lives"]:
                 _state, reward, done, info = env.step(1)
                 _state = _state / 255.0
                 alive = info["ale.lives"]
@@ -161,7 +159,7 @@ def test(env, agent):
         state = state / 255.0
         alive = info["ale.lives"]
 
-        for step in range(episode_step):
+        while not done:
             time.sleep(0.05)
             env.render()
             action = agent.choose_action(state)
@@ -171,9 +169,7 @@ def test(env, agent):
 
             ep_reward += reward
 
-            if done:
-                break
-            elif alive != info["ale.lives"]:
+            if alive != info["ale.lives"]:
                 _state, reward, done, info = env.step(1)
                 _state = _state / 255.0
                 alive = info["ale.lives"]

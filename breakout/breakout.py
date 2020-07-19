@@ -25,6 +25,7 @@ writer = SummaryWriter(log_dir="log", comment="dqn")
 
 
 def preprocess(state):
+    state = state[32:-14, 8:-8, :]
     state = cv2.cvtColor(cv2.resize(state, (80, 80)), cv2.COLOR_BGR2GRAY)
     ret, state = cv2.threshold(state, 1, 255, cv2.THRESH_BINARY)
     return np.reshape(state, (80, 80))

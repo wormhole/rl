@@ -16,7 +16,6 @@ gamma = 0.99
 target_update_step = 100
 memory_capacity = 10000
 episode = 20000
-episode_step = 2000
 observe = 1000
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

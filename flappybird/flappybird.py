@@ -15,7 +15,7 @@ import wrapped_flappy_bird as game
 actions = 2
 gamma = 0.99
 observe = 1000
-episode = 2000000
+explore = 2000000
 final_epsilon = 0.001
 initial_epsilon = 0.4
 memory_capacity = 10000
@@ -132,7 +132,7 @@ class DQNAgent(object):
     def choose_action(self, state):
         if self.epsilon != 1 and self.epsilon > final_epsilon and self.time_step > observe and (
                 self.time_step - observe) % 1000 == 0:
-            self.epsilon -= (initial_epsilon - final_epsilon) * 1000 / episode
+            self.epsilon -= (initial_epsilon - final_epsilon) * 1000 / explore
 
         action = np.zeros(actions)
         if self.time_step % frame_per_action == 0:
@@ -156,6 +156,8 @@ def train(env, agent):
     state = preprocess(state)
     state = np.stack((state, state, state, state), axis=0)
 
+    episode = 1
+
     while True:
         action = agent.choose_action(state)
         _state, reward, terminal = env.frame_step(action)
@@ -164,8 +166,9 @@ def train(env, agent):
         agent.store(state, action, reward, _state, terminal)
         total_reward += reward
         if terminal:
-            print("step: ", agent.time_step, "reward: ", total_reward, "epsilon: ", agent.epsilon)
+            print("episode: ", episode, "step: ", agent.time_step, "reward: ", total_reward, "epsilon: ", agent.epsilon)
             total_reward = 0
+            episode += 1
             action = np.array([1, 0])
             _state, reward, terminal = env.frame_step(action)
             _state = preprocess(_state)
@@ -182,6 +185,7 @@ def test(env, agent):
     state = preprocess(state)
     state = np.stack((state, state, state, state), axis=0)
 
+    episode = 1
     while True:
         action = agent.choose_action(state)
         _state, reward, terminal = env.frame_step(action)
@@ -189,7 +193,8 @@ def test(env, agent):
         _state = np.append(state[1:, :, :], np.expand_dims(_state, axis=0), axis=0)
         total_reward += reward
         if terminal:
-            print("step: ", agent.time_step, "reward: ", total_reward, "epsilon: ", agent.epsilon)
+            print("episode: ", episode, "step: ", agent.time_step, "reward: ", total_reward, "epsilon: ", agent.epsilon)
+            episode += 1
             total_reward = 0
             action = np.array([1, 0])
             _state, reward, terminal = env.frame_step(action)

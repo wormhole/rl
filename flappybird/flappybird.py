@@ -16,11 +16,10 @@ actions = 2
 gamma = 0.99
 observe = 1000
 explore = 2000000
-final_epsilon = 0.001
-initial_epsilon = 0.4
+initial_epsilon = 0.1
 memory_capacity = 10000
 batch_size = 32
-frame_per_action = 4
+frame_per_action = 2
 target_update_step = 100
 lr = 1e-6
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -130,9 +129,6 @@ class DQNAgent(object):
         writer.add_scalar("reward", reward, self.time_step)
 
     def choose_action(self, state):
-        if self.epsilon != 1 and self.epsilon > final_epsilon and self.time_step > observe and (
-                self.time_step - observe) % 1000 == 0:
-            self.epsilon -= (initial_epsilon - final_epsilon) * 1000 / explore
 
         action = np.zeros(actions)
         if self.time_step % frame_per_action == 0:
